@@ -1,20 +1,26 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from pydantic import BaseModel
 from utils.download import download_audio
-from utils.whisper import transcribe_audio
+import openai
 import os
 
 app = FastAPI()
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class TranscribeRequest(BaseModel):
     url: str
 
 @app.post("/transcribe")
-async def transcribe(req: TranscribeRequest):
-    audio_path = download_audio(req.url)
-    if not audio_path:
-        return {"error": "Audio konnte nicht geladen werden."}
-
-    result = transcribe_audio(audio_path)
-    os.remove(audio_path)  # Clean up
-    return result
+async def transcribe(request: TranscribeRequest):
+    try:
+        mp3_path = download_audio(request.url)
+        with open(mp3_path, "rb") as f:
+            transcript = openai.audio.transcriptions.create(
+                file=f,
+                model="whisper-1",
+                response_format="verbose_json"
+            )
+        return transcript
+    except Exception as e:
+        return {"error": str(e)}
