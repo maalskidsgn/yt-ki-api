@@ -1,23 +1,19 @@
 import yt_dlp
-import os
-import uuid
 
-def download_audio(url):
-    filename = f"/tmp/{uuid.uuid4()}.m4a"
+def download_audio(youtube_url: str, output_path: str = "/tmp/audio.mp3"):
     ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': filename,
-        'quiet': True,
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'm4a',
-            'preferredquality': '64',
+        "format": "bestaudio/best",
+        "outtmpl": output_path,
+        "quiet": True,
+        "noplaylist": True,
+        "postprocessors": [{
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "mp3",
+            "preferredquality": "192",
         }],
     }
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-        return filename if os.path.exists(filename) else None
-    except Exception as e:
-        print("Fehler beim Download:", e)
-        return None
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([youtube_url])
+
+    return output_path
